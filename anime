@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+import requests
+import cfscrape
+import urllib.request
+import time
+from bs4 import BeautifulSoup
+from jikanpy import Jikan
+import re
+import os
+
+query = input('Ingrese el nombre del anime: ')
+
+# jikan = Jikan()
+
+# searchResults = jikan.search('anime', query)
+
+# for number, result in enumerate(searchResults['results']):
+    # print(str(number) + ' - ' + result['title'])
+
+# anime = input('Ingrese el numero del anime: ')
+
+# anime = searchResults['results'][int(anime)]
+
+# print(anime['url'])
+
+# episodeUrl = re.search('[\w-]*$', anime['url']).group()
+
+# episodeUrl = episodeUrl.replace('_', '-').lower()
+
+# print(episodeUrl)
+
+# seasonUrl = 'https://tioanime.com/anime/' + episodeUrl
+
+scraper = cfscrape.create_scraper()
+
+query = query.replace(' ', '+')
+
+query = 'https://tioanime.com/directorio?q=' + query
+
+searchResults = scraper.get(query).content
+
+web = BeautifulSoup(searchResults, 'lxml')
+
+articles = web.find_all('article', { 'class': 'anime' })
+
+animes = []
+
+for article in articles:
+    animes.append({
+        'link': 'https://tioanime.com' + article.a.get_attribute_list('href')[0],
+        'title': article.h3.text
+        })
+
+for number, result in enumerate(animes):
+    print(str(number) + ' - ' + result['title'])
+
+index = input('Ingrese el numero del anime: ')
+
+seasonUrl = animes[int(index)]['link']
+
+episodeUrl = seasonUrl.replace('/anime/', '/ver/')
+
+season = scraper.get(seasonUrl).content
+
+season = BeautifulSoup(season, 'lxml')
+
+regex = re.compile('var episodes = (\[[\d,]*\])', re.MULTILINE | re.DOTALL)
+
+script = season.find('script', text=regex)
+
+regex = re.compile('(\[[\d,]*\])', re.MULTILINE | re.DOTALL)
+
+script = regex.search(script.text).group()
+
+script = script.replace('[', '')
+script = script.replace(']', '')
+script = script.split(',')
+
+script = [int(num) for num in script]
+episodes = sorted(script)
+
+for episode in episodes:
+    print('Episodio - ' + str(episode))
+
+episode = input('Ingrese el numero del episodeo que desea ver: ')
+
+episodeHtml = scraper.get(episodeUrl + '-' + episode).content
+
+episodeHtml = BeautifulSoup(episodeHtml, 'lxml')
+
+regex = re.compile('www.yourupload.com', re.MULTILINE | re.DOTALL)
+
+script = episodeHtml.find('script', text=regex)
+
+# regex = re.compile(r'yourupload.com\\/embed\\/(\w*)', re.MULTILINE | re.DOTALL)
+
+# urlparsed = regex.search(script.text).group()
+
+# regex = re.compile(r'\w*$', re.MULTILINE | re.DOTALL)
+
+# urlparsed = regex.search(urlparsed).group()
+
+# episodeUrl = 'https://www.yourupload.com/embed/' + urlparsed
+
+# Getting link to embed video
+
+regex = re.compile(r'tioanime\.com\\/embed.php\?s=(prime|amus)&v=[\w=]*', re.MULTILINE | re.DOTALL)
+
+urlparsed = regex.search(script.text).group()
+
+regex = re.compile(r'(prime|amus)&[\w=]*$', re.MULTILINE | re.DOTALL)
+
+urlparsed = regex.search(urlparsed).group()
+
+episodeUrl = 'https://v.tioanime.com//embed.php?s=' + urlparsed
+
+# Getting the cached php
+
+episode = scraper.get(episodeUrl).content
+
+episode = BeautifulSoup(episode, 'lxml')
+
+regex = re.compile(r'check\.php\?s=(prime|amus)&v=[\w=]*', re.MULTILINE | re.DOTALL)
+
+urlparsed = regex.search(episode.text).group()
+
+regex = re.compile(r'(prime|amus)&[\w=]*$', re.MULTILINE | re.DOTALL)
+
+urlparsed = regex.search(urlparsed).group()
+
+episodeUrl = 'https://v.tioanime.com/check.php?s=' + urlparsed
+
+print(episodeUrl)
+
+# get stream link
+
+episode = scraper.get(episodeUrl).content
+
+episode = BeautifulSoup(episode, 'lxml')
+
+episode = episode.find('p')
+
+print(episode.text);
+
+regex = re.compile(r':".*"', re.MULTILINE | re.DOTALL)
+
+urlparsed = regex.search(episode.text).group()
+
+episodeUrl = urlparsed.replace(':\"', '').replace('\"', '').replace('\\', "")
+
+print(urlparsed)
+
+os.system('vlc ' + episodeUrl)
+
