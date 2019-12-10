@@ -140,11 +140,26 @@ episode = BeautifulSoup(episode, 'lxml')
 
 episode = episode.find('p')
 
-print(episode.text);
-
 regex = re.compile(r':".*"', re.MULTILINE | re.DOTALL)
 
-urlparsed = regex.search(episode.text).group()
+urlparsed = regex.search(episode.text)
+
+if urlparsed == None:
+    print('Rechazado intentando nuevamente...')
+
+    time.sleep(5)
+
+    episode = scraper.get(episodeUrl).content
+
+    episode = BeautifulSoup(episode, 'lxml')
+
+    episode = episode.find('p')
+
+    urlparsed = regex.search(episode.text)
+
+    print(urlparsed)
+
+urlparsed = urlparsed.group()
 
 episodeUrl = urlparsed.replace(':\"', '').replace('\"', '').replace('\\', "")
 
