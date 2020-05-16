@@ -70,7 +70,7 @@ script = season.find('script', text=regex)
 
 regex = re.compile('(\[[\d,]*\])', re.MULTILINE | re.DOTALL)
 
-script = regex.search(script.text).group()
+script = regex.search(script.string).group()
 
 script = script.replace('[', '')
 script = script.replace(']', '')
@@ -106,7 +106,7 @@ script = episodeHtml.find('script', text=regex)
 
 regex = re.compile(r'tioanime\.com\\/embed.php\?s=(prime|amus)&v=[\w=]*', re.MULTILINE | re.DOTALL)
 
-urlparsed = regex.search(script.text).group()
+urlparsed = regex.search(script.string).group()
 
 regex = re.compile(r'(prime|amus)&[\w=]*$', re.MULTILINE | re.DOTALL)
 
@@ -116,21 +116,17 @@ episodeUrl = 'https://v.tioanime.com//embed.php?s=' + urlparsed
 
 # Getting the cached php
 
-episode = scraper.get(episodeUrl).content
-
-episode = BeautifulSoup(episode, 'lxml')
+episode = scraper.get(episodeUrl).text
 
 regex = re.compile(r'check\.php\?s=(prime|amus)&v=[\w=]*', re.MULTILINE | re.DOTALL)
 
-urlparsed = regex.search(episode.text).group()
+urlparsed = regex.search(episode).group()
 
 regex = re.compile(r'(prime|amus)&[\w=]*$', re.MULTILINE | re.DOTALL)
 
 urlparsed = regex.search(urlparsed).group()
 
 episodeUrl = 'https://v.tioanime.com/check.php?s=' + urlparsed
-
-print(episodeUrl)
 
 # get stream link
 
